@@ -61,8 +61,8 @@
 
 // ---------- Wi-Fi ----------
 
-const char* ssid = "Redmi15";
-const char* password = "12345678";
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
 
 
 // ---------- Apache/PHP Server ----------
@@ -185,14 +185,14 @@ AccessRule accessRules[] = {
 
   // UID         Start       End
 
-  { "6363F92C",  5, 30,     18, 30 },   // آقای احمدی
-  { "9B0AC422",  8, 00,     17, 00 },   // آقای کردلو
-  { "5B1D6C22",  9, 00,     15, 00 },   // خانم اسدی
-  { "8B516A22",  8, 00,     16, 00 },   // آقای رفیع خیاط
-  { "0BB16322",  8, 00,     16, 00 },   // آقای موسوی
-  { "9B9C6422",  8, 00,     16, 00 },   // خانم محمودی
-  { "CB9BB722",  8, 00,     16, 00 },   // آقای اخوت
-  { "ABBC6922",  0, 00,     23, 59 }    // تست
+  { "6363F92C",  5, 30,     18, 30 },   // Mr Ahmadi
+  { "9B0AC422",  8, 00,     17, 00 },   // Mr Kordloo
+  { "5B1D6C22",  9, 00,     15, 00 },   // Mrs Asadi
+  { "8B516A22",  8, 00,     16, 00 },   // Mr Rafi Khayat
+  { "0BB16322",  8, 00,     16, 00 },   // Mr Mousavi
+  { "9B9C6422",  8, 00,     16, 00 },   // Mrs Mahmoodi
+  { "CB9BB722",  8, 00,     16, 00 },   // Mr Okhovat
+  { "ABBC6922",  0, 00,     23, 59 }    // Test
 };
 
 
@@ -237,30 +237,30 @@ Record records[MAX_RECORDS];
 String getNameFromUID(const String &uid) {
 
   if (uid == "6363F92C")
-    return "آقای احمدی";
+    return "Ali Ahmadi";
 
   if (uid == "9B0AC422")
-    return "آقای کردلو";
+    return "Vahid Kordloo";
 
   if (uid == "5B1D6C22")
-    return "خانم اسدی";
+    return "Fateme Asadi";
 
   if (uid == "8B516A22")
-    return "آقای رفیع خیاط";
+    return "Younes Rafi Khayat";
 
   if (uid == "0BB16322")
-    return "آقای موسوی";
+    return "Mohammad Mousavi";
 
   if (uid == "9B9C6422")
-    return "خانم محمودی";
+    return "Zahra Mahmoodi";
 
   if (uid == "CB9BB722")
-    return "آقای اخوت";
+    return "Reza Okhovat";
 
   if (uid == "ABBC6922")
-    return "تست";
+    return "Test";
 
-  return "ناشناس";
+  return "UNKNOWN";
 }
 
 

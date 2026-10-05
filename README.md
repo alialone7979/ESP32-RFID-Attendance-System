@@ -175,6 +175,7 @@ The project uses a 5V relay module.
 
 Since the ESP32 GPIO operates at 3.3V while the relay module requires a 5V-level control signal, a logic level shifter was used between the ESP32 and the relay input.
 
+```text
 ESP32 GPIO 27
       │
       ▼
@@ -185,6 +186,7 @@ ESP32 GPIO 27
         │
         ▼
    5V Relay Module
+```
 
    This allows the 3.3V ESP32 control signal to interface with the 5V relay module.
 
@@ -217,7 +219,9 @@ Access Control
 Each RFID card can have its own allowed access interval.
 
 For example:
+```text
 { "6363F92C", 7, 30, 18, 30 }
+```
 means that the corresponding user is allowed to access the system between:
 07:30 → 18:30
 The firmware checks:
@@ -230,7 +234,7 @@ The firmware checks:
 Only when all required conditions are satisfied is access granted.
 
 Access Control Logic
-
+```text
 RFID Card Detected
         │
         ▼
@@ -252,7 +256,7 @@ ACCESS GRANTED
         ├── No active IN ─────► CHECK IN
         │
         └── Active IN ────────► CHECK OUT
-
+```
 An unknown or unauthorized card does not:
 
 • activate the relay
@@ -266,7 +270,7 @@ Attendance Management
 The system supports both Check-In and Check-Out operations.
 
 When a user scans their card:
-
+```text
 First scan
 
 RFID detected
@@ -280,9 +284,9 @@ Save IN state
 Activate relay
       ↓
 Log attendance
-
+```
 Second scan
-
+```text
 RFID detected
       ↓
 Access granted
@@ -296,7 +300,7 @@ Clear IN state
 Activate relay
       ↓
 Update attendance record
-
+```
 Persistent Attendance State
 
 The project uses the ESP32 Preferences library to store active attendance states.
@@ -339,7 +343,9 @@ Jalali Date
 Attendance records use the Persian/Jalali calendar format.
 
 Example:
+```text
 1405/07/12
+```
 This makes the attendance records easier to use in an Iranian workplace environment.
 
 OLED Interface
@@ -347,35 +353,38 @@ OLED Interface
 The 0.96" SSD1306 OLED provides real-time feedback.
 
 Normal state
-
+```text
 RFID ATTENDANCE
 
 05:35:09
 1405/07/11
 
 Scan your card
-
+```
 Card detected
-
+```text
 CARD DETECTED
 
 ALI AHMADI
 
 Checking access...
-
+```
 Access granted
+```
 ACCESS GRANTED
 
 ALI AHMADI
 
 CHECK IN
+```
 Access denied
+```
 ACCESS DENIED
 
 ALI AHMADI
 
 Try again later
-
+```
 After the result is displayed, the system returns to the normal clock screen.
 
 Buzzer Feedback
@@ -383,10 +392,10 @@ Buzzer Feedback
 The buzzer provides audio feedback during authorized attendance operations.
 
 The current firmware uses a short tone:
-
+```
 Frequency: 100 Hz
 Duration: 500 ms
-
+```
 Unauthorized cards do not activate the buzzer.
 
 Local SD Card Backup
@@ -396,9 +405,10 @@ Attendance events are also stored locally on a microSD card.
 The SD card acts as a local backup in case the network/server becomes unavailable.
 
 Example:
-
+```
 UID,Name,Date,TimeIn,TimeOut,DurationMin,Status
 "6363F92C","Mr. Ahmadi","1405/07/11","07:38:24","16:52:17",553,"OUT"
+```
 The local SD log is designed as an event-oriented backup, while the server-side CSV can update the corresponding open attendance record when a user checks out.
 
 Important SD Card Hardware Debugging
@@ -412,22 +422,23 @@ Although the module produced approximately 3.3V on its regulated side, connectin
 Observed behavior
 
 With the SD module connected:
-
+```
 MFRC522 communication failed
 UID read returned invalid data
-
+```
 The RFID reader reported values such as:
-
+```
 0xFF
-
+```
 However, when the SD module's MISO connection was disconnected, the MFRC522 immediately returned to normal operation.
 
 For example:
-
+```
 Without problematic SD MISO:
 MFRC522 detected
 Version: 0xB2
 RFID UID read successfully
+```
 Root cause investigation
 
 The issue was not simply that the SD module was connected to the same SPI bus.
@@ -441,16 +452,16 @@ Final solution
 A different 3.3V microSD module was selected and tested successfully.
 
 The final configuration uses:
-
+```
 RFID CS → GPIO 5
 SD CS   → GPIO 13
-
+```
 with the shared SPI signals:
-
+```
 SCK  → GPIO 18
 MISO → GPIO 19
 MOSI → GPIO 23
-
+```
 The firmware also explicitly sets the inactive device's chip-select line HIGH before communicating with the other SPI peripheral.
 
 This debugging process was an important part of the project because it demonstrated a real-world SPI bus hardware compatibility and signal-interference problem rather than simply a software configuration issue.
@@ -466,9 +477,9 @@ The server runs using:
 • CSV storage
 
 The ESP32 sends attendance information to:
-
+```
 attendance.php
-
+```
 The transmitted information includes:
 
 • RFID UID
@@ -502,16 +513,17 @@ and updates it with:
 This allows multiple attendance sessions for the same person on the same day.
 
 Example:
-
+```
 UID,Name,Date,TimeIn,TimeOut,DurationMin,Status
 6363F92C,Mr. Ahmadi,1405/07/11,07:38:24,12:15:32,277,OUT
 6363F92C,Mr. Ahmadi,1405/07/11,13:18:46,13:51:22,32,OUT
-
+```
 Server Communication
 
 The ESP32 uses HTTP to communicate with the PHP backend.
 
 Example architecture:
+```
 ESP32
   │
   │ HTTP POST
@@ -523,7 +535,7 @@ attendance.php
   │
   ▼
 attendance.csv
-
+```
 The server response is checked by the ESP32 so that communication failures can be detected.
 
 Browser-Based OTA Firmware Update
@@ -533,7 +545,7 @@ The project includes a custom web-based OTA system.
 Instead of connecting the ESP32 to USB every time a firmware update is required, a compiled .bin firmware file can be uploaded through a web browser.
 
 OTA workflow
-
+```
 Arduino IDE
      │
      ▼
@@ -553,7 +565,7 @@ Update Firmware
      │
      ▼
 ESP32 Restart
-
+```
 The web interface provides:
 
 Login page
@@ -567,19 +579,19 @@ After successful upload, the ESP32 restarts and runs the new firmware.
 OTA Access
 
 The ESP32 web interface can be accessed using its IP address:
-
+```
 http://ESP32-IP/
-
+```
 The project also uses the hostname:
-
+```
 ESP32-RFID-Attendance
-
+```
 when mDNS is available.
 
 The OTA interface accepts a compiled:
-
+```
 .bin
-
+```
 firmware file.
 
 OTA Security Note
@@ -593,13 +605,14 @@ Wi-Fi credentials and server-specific network information should also be kept ou
 Project Files
 
 The repository currently contains the main project files:
-
+```
 ESP32-RFID-Attendance-System/
 │
 ├── ESP32-RFID-Attendance-system.ino
 ├── attendance.php
 ├── ESP32-RFID-Attendance-System.png
 └── attendance-Excel.png
+```
 
 ESP32-RFID-Attendance-system.ino
 
@@ -638,6 +651,7 @@ Recommended environment:
 • ESP32-compatible libraries
 
 Required libraries include:
+```
 WiFi
 WebServer
 ESPmDNS
@@ -651,6 +665,7 @@ Adafruit SSD1306
 SD
 Preferences
 HTTPClient
+```
 Server Requirements
 
 For the PHP backend:
@@ -661,14 +676,14 @@ XAMPP or equivalent local web server
 Writable directory for CSV storage
 
 Example XAMPP directory:
-
+```
 C:\xampp\htdocs\attendance\
-
+```
 Containing:
-
+```
 attendance.php
 attendance.csv
-
+```
 Setup
 
 1. Hardware
@@ -681,6 +696,7 @@ Pay particular attention to:
 • 5V relay interface
 • SPI chip-select lines
 • SD/RFID shared SPI bus
+
 2. Configure Wi-Fi
 
 Set the Wi-Fi credentials in the firmware.
@@ -692,23 +708,23 @@ A safer approach is to use a separate configuration file or placeholder values.
 3. Configure Server
 
 Place:
-
+```
 attendance.php
-
+```
 inside the Apache web root.
 
 Create:
-
+```
 attendance.csv
-
+```
 with the required CSV structure.
 
 4. Configure ESP32 Server URL
 
 Set the PHP server address in the firmware:
-
+```
 http://YOUR-SERVER-IP/attendance/attendance.php
-
+```
 The ESP32 and server computer must be able to communicate over the same network.
 
 5. Upload Initial Firmware
@@ -720,7 +736,7 @@ After Web OTA has been configured, subsequent firmware updates can be performed 
 Attendance Data Format
 
 The CSV uses the following fields:
-
+```
 UID
 Name
 Date
@@ -728,23 +744,27 @@ TimeIn
 TimeOut
 DurationMin
 Status
-
+```
 Example:
-
+```
 UID,Name,Date,TimeIn,TimeOut,DurationMin,Status
 "6363F92C","Mr. Ahmadi","1405/07/11","07:38:24","16:52:17",553,"OUT"
+```
 Error Handling
 
 The firmware handles several failure conditions.
 
 Unknown RFID card
+```
 ACCESS DENIED
-
+```
 No attendance record is created.
 
 Outside allowed time
+```
 ACCESS DENIED
 Try again later
+```
 SD card unavailable
 
 The system can continue operating through the network/server path while reporting the local SD logging failure.
@@ -764,11 +784,11 @@ This project involved several practical engineering challenges beyond writing th
 1. Shared SPI Bus
 
 The MFRC522 and microSD card share:
-
+```
 SCK
 MISO
 MOSI
-
+```
 while using independent chip-select signals.
 
 Careful CS management was required to prevent peripheral conflicts.
@@ -786,13 +806,13 @@ A different 3.3V microSD module was ultimately selected.
 The ESP32 operates using 3.3V GPIO logic, while the available relay module was a 5V relay.
 
 A logic level shifter was therefore introduced between:
-
+```
 ESP32 3.3V GPIO
        ↓
 Logic Level Shifter
        ↓
 5V Relay Module
-
+```
 This provided a safer interface between the ESP32 and the relay control input.
 
 4. Persistent Attendance State
@@ -804,11 +824,11 @@ This prevents the system from forgetting that a user has already checked in.
 5. Network + Local Backup
 
 The system uses both:
-
+```
 Local SD storage
 +
 Network server
-
+```
 instead of depending entirely on a network connection.
 
 This creates a more robust attendance architecture.
@@ -856,7 +876,7 @@ The browser-based OTA update was successfully tested from firmware upload throug
 Example Workflow
 
 A typical attendance operation looks like this:
-
+```
 1. User scans RFID card
           ↓
 2. ESP32 reads UID
@@ -880,17 +900,17 @@ A typical attendance operation looks like this:
 11. Attendance is sent to PHP server
           ↓
 12. Server updates attendance.csv
-
+```
 Example Attendance Scenario
 
 For a user who checks in at:
-
+```
 07:38:24
-
+```
 and checks out at:
-
+```
 16:52:17
-
+```
 the system calculates the attendance duration and stores the corresponding record.
 
 For multiple sessions, each IN/OUT pair can be stored independently.

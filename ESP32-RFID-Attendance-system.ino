@@ -23,7 +23,7 @@
    - Apache + PHP
    - CSV
    - SD card local attendance backup
-   - OTA firmware updates over Wi-Fi
+   - Browser-based OTA firmware updates over Wi-Fi
 
    Features:
    - Persian/Jalali date
@@ -45,7 +45,10 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <WiFi.h>
-#include <ArduinoOTA.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
+#include <ESPmDNS.h>
+#include <Update.h>
 #include <HTTPClient.h>
 #include <Wire.h>
 #include <RTClib.h>
@@ -61,19 +64,23 @@
 
 // ---------- Wi-Fi ----------
 
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = "Redmi15";
+const char* password = "12345678";
 
 
 // ---------- Apache/PHP Server ----------
 
 const String serverUrl =
-  "http://10.205.203.150/attendance/attendance.php";
+  "http://10.58.8.150/attendance/attendance.php";
 
 
-// ---------- OTA ----------
+// ---------- Web OTA ----------
 
 const char* otaHostname = "ESP32-RFID-Attendance";
+const char* otaUsername = "admin";
+const char* otaPassword = "admin";
+
+WebServer server(80);
 
 
 // ---------- RFID ----------
@@ -185,14 +192,14 @@ AccessRule accessRules[] = {
 
   // UID         Start       End
 
-  { "6363F92C",  5, 30,     18, 30 },   // Mr Ahmadi
-  { "9B0AC422",  8, 00,     17, 00 },   // Mr Kordloo
-  { "5B1D6C22",  9, 00,     15, 00 },   // Mrs Asadi
-  { "8B516A22",  8, 00,     16, 00 },   // Mr Rafi Khayat
-  { "0BB16322",  8, 00,     16, 00 },   // Mr Mousavi
-  { "9B9C6422",  8, 00,     16, 00 },   // Mrs Mahmoodi
-  { "CB9BB722",  8, 00,     16, 00 },   // Mr Okhovat
-  { "ABBC6922",  0, 00,     23, 59 }    // Test
+  { "6363F92C",  5, 30,     18, 30 },   //  ALI AHMADI
+  { "9B0AC422",  8, 00,     17, 00 },   //  VAHID KORDLO
+  { "5B1D6C22",  9, 00,     15, 00 },   //  FATEME ASADI
+  { "8B516A22",  8, 00,     16, 00 },   //  YOUNES RAFI KHAYAT
+  { "0BB16322",  8, 00,     16, 00 },   //  MOHAMMAD MOUSAVI
+  { "9B9C6422",  8, 00,     16, 00 },   //  ZAHRA MAHMOUDI
+  { "CB9BB722",  8, 00,     16, 00 },   //  REZA OKHOVAT
+  { "ABBC6922",  0, 00,     23, 59 }    //  TEST
 };
 
 
@@ -237,28 +244,28 @@ Record records[MAX_RECORDS];
 String getNameFromUID(const String &uid) {
 
   if (uid == "6363F92C")
-    return "Ali Ahmadi";
+    return "ALI AHMADI";
 
   if (uid == "9B0AC422")
-    return "Vahid Kordloo";
+    return "VAHID KORDLO";
 
   if (uid == "5B1D6C22")
-    return "Fateme Asadi";
+    return "FATEME ASADI";
 
   if (uid == "8B516A22")
-    return "Younes Rafi Khayat";
+    return "YOUNES RAFI KHAYAT";
 
   if (uid == "0BB16322")
-    return "Mohammad Mousavi";
+    return "MOHAMMAD MOUSAVI";
 
   if (uid == "9B9C6422")
-    return "Zahra Mahmoodi";
+    return "ZAHRA MAHMOUDI";
 
   if (uid == "CB9BB722")
-    return "Reza Okhovat";
+    return "REZA OKHOVAT";
 
   if (uid == "ABBC6922")
-    return "Test";
+    return "TEST";
 
   return "UNKNOWN";
 }
@@ -1504,78 +1511,136 @@ void updateOLED() {
 
 
 // ==================================================
-// OTA
+// WEB OTA
 // ==================================================
 
-void initializeOTA() {
+const char* loginIndex =
+"<form name='loginForm' style='font-family:Arial;text-align:center;margin-top:80px'>"
+"<h2>ESP32 RFID Attendance</h2>"
+"<h3>Firmware Update Login</h3>"
+"<input type='text' name='userid' placeholder='Username'><br><br>"
+"<input type='password' name='pwd' placeholder='Password'><br><br>"
+"<input type='submit' value='Login'>"
+"</form>"
+"<script>"
+"document.forms.loginForm.onsubmit=function(e){"
+"e.preventDefault();"
+"if(this.userid.value=='admin' && this.pwd.value=='admin'){"
+"window.location='/serverIndex';"
+"}else{alert('Invalid username or password');}"
+"};"
+"</script>";
+
+const char* serverIndex =
+"<!DOCTYPE html><html><head>"
+"<meta name='viewport' content='width=device-width,initial-scale=1'>"
+"<title>ESP32 RFID Firmware Update</title>"
+"<style>"
+"body{font-family:Arial;max-width:600px;margin:50px auto;padding:20px;text-align:center}"
+".box{border:1px solid #ccc;border-radius:12px;padding:25px}"
+"input{margin:10px 0}button{padding:10px 20px}"
+"#prg{margin-top:20px;font-weight:bold}"
+"</style></head><body><div class='box'>"
+"<h2>ESP32 RFID Attendance</h2><h3>Firmware Update</h3>"
+"<p>Select the compiled <b>.bin</b> firmware file.</p>"
+"<form method='POST' action='/update' enctype='multipart/form-data' id='upload_form'>"
+"<input type='file' name='update' accept='.bin' required><br>"
+"<button type='submit'>Upload Firmware</button></form>"
+"<div id='prg'>Progress: 0%</div><p id='status'></p>"
+"</div><script>"
+"const form=document.getElementById('upload_form');"
+"form.addEventListener('submit',function(e){"
+"e.preventDefault();const xhr=new XMLHttpRequest();"
+"const data=new FormData(form);xhr.open('POST','/update',true);"
+"xhr.upload.onprogress=function(e){if(e.lengthComputable){"
+"document.getElementById('prg').innerText='Progress: '+Math.round(e.loaded/e.total*100)+'%';}};"
+"xhr.onload=function(){if(xhr.status===200){"
+"document.getElementById('status').innerText='Update uploaded. ESP32 is restarting...';"
+"}else{document.getElementById('status').innerText='Update failed: '+xhr.responseText;}};"
+"xhr.onerror=function(){document.getElementById('status').innerText='Connection error';};"
+"xhr.send(data);});"
+"</script></body></html>";
+
+void initializeWebOTA() {
 
   if (WiFi.status() != WL_CONNECTED) {
-
-    Serial.println("⚠️ OTA skipped: Wi-Fi not connected");
-
+    Serial.println("⚠️ Web OTA skipped: Wi-Fi not connected");
     return;
   }
 
+  if (!MDNS.begin(otaHostname)) {
+    Serial.println("⚠️ mDNS responder failed");
+  } else {
+    Serial.println("✅ mDNS responder started");
+    Serial.print("Web OTA: http://");
+    Serial.print(otaHostname);
+    Serial.println(".local/");
+  }
 
-  ArduinoOTA.setHostname(otaHostname);
-
-
-  ArduinoOTA.onStart([]() {
-
-    String type = (ArduinoOTA.getCommand() == U_FLASH)
-                  ? "firmware"
-                  : "filesystem";
-
-    Serial.println("🔄 OTA update started: " + type);
+  server.on("/", HTTP_GET, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/html", loginIndex);
   });
 
-
-  ArduinoOTA.onEnd([]() {
-
-    Serial.println("\n✅ OTA update finished");
+  server.on("/serverIndex", HTTP_GET, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/html", serverIndex);
   });
 
+  server.on("/update", HTTP_POST, []() {
+    server.sendHeader("Connection", "close");
 
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-
-    Serial.printf("OTA Progress: %u%%\r", (progress * 100) / total);
-  });
-
-
-  ArduinoOTA.onError([](ota_error_t error) {
-
-    Serial.printf("\n❌ OTA Error [%u]: ", error);
-
-    if (error == OTA_AUTH_ERROR) {
-      Serial.println("Authentication Failed");
-    } else if (error == OTA_BEGIN_ERROR) {
-      Serial.println("Begin Failed");
-    } else if (error == OTA_CONNECT_ERROR) {
-      Serial.println("Connect Failed");
-    } else if (error == OTA_RECEIVE_ERROR) {
-      Serial.println("Receive Failed");
-    } else if (error == OTA_END_ERROR) {
-      Serial.println("End Failed");
+    if (Update.hasError()) {
+      server.send(500, "text/plain", "FAIL");
     } else {
-      Serial.println("Unknown Error");
+      server.send(200, "text/plain", "OK");
+    }
+
+    delay(100);
+    ESP.restart();
+
+  }, []() {
+
+    HTTPUpload& upload = server.upload();
+
+    if (upload.status == UPLOAD_FILE_START) {
+
+      Serial.printf("Web OTA Update: %s\n", upload.filename.c_str());
+
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+        Update.printError(Serial);
+      }
+
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+
+      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        Update.printError(Serial);
+      }
+
+    } else if (upload.status == UPLOAD_FILE_END) {
+
+      if (Update.end(true)) {
+        Serial.printf("Web OTA Update Success: %u bytes\n", upload.totalSize);
+      } else {
+        Update.printError(Serial);
+      }
     }
   });
 
+  server.begin();
 
-  ArduinoOTA.begin();
-
-
-  Serial.println("✅ OTA Ready");
-  Serial.print("OTA Hostname: ");
-  Serial.println(otaHostname);
-  Serial.print("OTA IP: ");
-  Serial.println(WiFi.localIP());
+  Serial.println("✅ Web OTA server started");
+  Serial.print("Web OTA IP: http://");
+  Serial.print(WiFi.localIP());
+  Serial.println("/");
+  Serial.println("Web OTA login: admin / admin");
 }
 
 
 // ==================================================
 // SETUP
 // ==================================================
+
 
 void setup() {
 
@@ -1731,10 +1796,10 @@ void setup() {
 
 
   // ------------------------------------------------
-  // OTA
+  // Web OTA
   // ------------------------------------------------
 
-  initializeOTA();
+  initializeWebOTA();
 
 
   // ------------------------------------------------
@@ -1771,10 +1836,10 @@ void setup() {
 void loop() {
 
   // ------------------------------------------------
-  // Handle OTA requests
+  // Handle Web OTA requests
   // ------------------------------------------------
 
-  ArduinoOTA.handle();
+  server.handleClient();
 
 
   // ------------------------------------------------

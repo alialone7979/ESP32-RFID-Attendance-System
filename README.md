@@ -915,6 +915,22 @@ the system calculates the attendance duration and stores the corresponding recor
 
 For multiple sessions, each IN/OUT pair can be stored independently.
 
+## Circuit Diagram
+
+The circuit was designed using Fritzing.
+
+![Circuit Diagram](ESP32-RFID-Attendance-System-fritzing.png)
+
+## Demo
+
+The following video demonstrates the operation of the ESP32 Keypad Door Lock system.
+
+[ESP32 RFID Attendance System Demo]()
+
+## Excel Output
+
+![Excel Output](attendance-Excel.png)
+
 Demo Data
 
 The repository may contain an example attendance dataset for demonstrating the system's output and data visualization.

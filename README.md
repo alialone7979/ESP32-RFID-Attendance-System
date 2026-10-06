@@ -143,7 +143,7 @@ SSD1306 OLED
 | Address |    0x3C |
 The OLED and DS1307 share the same I2C bus.
 
-microSD
+## microSD
 
 The working microSD module uses the same SPI bus as the MFRC522 RFID reader.
 
@@ -169,7 +169,7 @@ but use separate chip-select pins:
 
 The firmware explicitly manages the chip-select lines to prevent conflicts between the two SPI devices.
 
-Relay
+## Relay
 
 The project uses a 5V relay module.
 
@@ -197,7 +197,7 @@ The relay is configured as active-low:
 
 The relay is activated for different durations depending on the attendance event.
 
-RFID Users
+## RFID Users
 
 The firmware contains a UID-to-user mapping.
 
@@ -214,7 +214,7 @@ Example registered users:
 | `CB9BB722` | REZA OKHOVAT       |
 | `ABBC6922` | Test               |
 
-Access Control
+## Access Control
 
 Each RFID card can have its own allowed access interval.
 
@@ -233,7 +233,7 @@ The firmware checks:
 
 Only when all required conditions are satisfied is access granted.
 
-Access Control Logic
+## Access Control Logic
 ```text
 RFID Card Detected
         │
@@ -321,7 +321,7 @@ DS1307 RTC
 
 The DS1307 provides continuous local time.
 
-NTP
+## NTP
 
 When Wi-Fi is available, the ESP32 synchronizes the clock using an NTP server.
 
@@ -348,7 +348,7 @@ Example:
 ```
 This makes the attendance records easier to use in an Iranian workplace environment.
 
-OLED Interface
+## OLED Interface
 
 The 0.96" SSD1306 OLED provides real-time feedback.
 
@@ -387,7 +387,7 @@ Try again later
 ```
 After the result is displayed, the system returns to the normal clock screen.
 
-Buzzer Feedback
+## Buzzer Feedback
 
 The buzzer provides audio feedback during authorized attendance operations.
 
@@ -404,7 +404,7 @@ Attendance events are also stored locally on a microSD card.
 
 The SD card acts as a local backup in case the network/server becomes unavailable.
 
-Example:
+## Example:
 ```
 UID,Name,Date,TimeIn,TimeOut,DurationMin,Status
 "6363F92C","Mr. Ahmadi","1405/07/11","07:38:24","16:52:17",553,"OUT"
@@ -447,7 +447,7 @@ The important observation was that the SD module continued to interfere with the
 
 This prevented the MFRC522 from communicating correctly.
 
-Final solution
+## Final solution
 
 A different 3.3V microSD module was selected and tested successfully.
 
@@ -522,7 +522,7 @@ Server Communication
 
 The ESP32 uses HTTP to communicate with the PHP backend.
 
-Example architecture:
+## Example architecture:
 ```
 ESP32
   │
@@ -544,7 +544,7 @@ The project includes a custom web-based OTA system.
 
 Instead of connecting the ESP32 to USB every time a firmware update is required, a compiled .bin firmware file can be uploaded through a web browser.
 
-OTA workflow
+## OTA workflow
 ```
 Arduino IDE
      │
@@ -616,7 +616,7 @@ ESP32-RFID-Attendance-System/
 
 ESP32-RFID-Attendance-system.ino
 
-Main ESP32 firmware containing:
+## Main ESP32 firmware containing:
 
 • RFID handling
 • Access control
@@ -636,12 +636,12 @@ PHP backend responsible for processing attendance requests and maintaining the s
 ESP32-RFID-Attendance-System.png
 
 Project/system overview image.
-
+```
 attendance-Excel.png
-
+```
 Example visualization of the attendance data.
 
-Software Requirements
+## Software Requirements
 ESP32 Development
 
 Recommended environment:
@@ -650,7 +650,7 @@ Recommended environment:
 • ESP32 board package
 • ESP32-compatible libraries
 
-Required libraries include:
+## Required libraries include:
 ```
 WiFi
 WebServer
@@ -670,10 +670,10 @@ Server Requirements
 
 For the PHP backend:
 
-Apache
-PHP
-XAMPP or equivalent local web server
-Writable directory for CSV storage
+• Apache
+• PHP
+• XAMPP or equivalent local web server
+• Writable directory for CSV storage
 
 Example XAMPP directory:
 ```
@@ -684,7 +684,7 @@ Containing:
 attendance.php
 attendance.csv
 ```
-Setup
+## Setup
 
 1. Hardware
 
@@ -745,7 +745,7 @@ TimeOut
 DurationMin
 Status
 ```
-Example:
+## Example:
 ```
 UID,Name,Date,TimeIn,TimeOut,DurationMin,Status
 "6363F92C","Mr. Ahmadi","1405/07/11","07:38:24","16:52:17",553,"OUT"
@@ -777,7 +777,7 @@ Wi-Fi unavailable
 
 The core RFID/access-control functionality can still operate using the locally available hardware and stored configuration, while network-dependent operations cannot be completed until connectivity is restored.
 
-Real-World Engineering Challenges
+## Real-World Engineering Challenges
 
 This project involved several practical engineering challenges beyond writing the firmware.
 
@@ -833,7 +833,7 @@ instead of depending entirely on a network connection.
 
 This creates a more robust attendance architecture.
 
-Testing
+## Testing
 
 The system was tested through several stages.
 
@@ -873,7 +873,7 @@ OTA
 
 The browser-based OTA update was successfully tested from firmware upload through ESP32 restart and return to the web interface.
 
-Example Workflow
+## Example Workflow
 
 A typical attendance operation looks like this:
 ```
@@ -901,7 +901,7 @@ A typical attendance operation looks like this:
           ↓
 12. Server updates attendance.csv
 ```
-Example Attendance Scenario
+## Example Attendance Scenario
 
 For a user who checks in at:
 ```
@@ -937,7 +937,7 @@ The repository may contain an example attendance dataset for demonstrating the s
 
 The sample CSV data is intended for demonstration purposes and does not necessarily represent a complete real-world day's attendance generated by multiple physical RFID cards.
 
-Future Improvements
+## Future Improvements
 
 Possible future improvements include:
 
@@ -959,7 +959,7 @@ Possible future improvements include:
 • Web-based system configuration
 • Multiple ESP32 terminals connected to one central server
 
-Learning Outcomes
+## Learning Outcomes
 
 This project provided practical experience with:
 
@@ -985,7 +985,7 @@ This project provided practical experience with:
 • Peripheral bus troubleshooting
 • Embedded system architecture
 
-Author
+## Author
 
 Ali Ahmadi
 
